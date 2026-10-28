@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go mod download
+      - run: gofmt -l cmd internal | tee /tmp/unformatted && test ! -s /tmp/unformatted
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go build -o /tmp/office-api ./cmd/api
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # First create and commit web/package-lock.json, then switch to npm ci.
+      - run: npm install
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+      - run: npm run test -- --run
+        working-directory: web
+      - run: npm run build
+        working-directory: web

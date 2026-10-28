@@ -1,0 +1,12 @@
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY web/package*.json ./
+# After first npm install, commit package-lock.json and change to npm ci.
+RUN npm install --no-audit --no-fund
+COPY web/ ./
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder /app/dist /srv
+EXPOSE 80
